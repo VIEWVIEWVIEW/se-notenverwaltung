@@ -377,7 +377,7 @@ public class Main extends Application {
         var dialog = new Dialog();
 
         dialog.setTitle("Abschlussfenster");
-        
+
         ButtonType speichern = new ButtonType("Speichern", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(speichern, ButtonType.CANCEL);
 
@@ -389,14 +389,32 @@ public class Main extends Application {
         var kEcts = new TextField();
         grid.add(kEcts, 2, 2);
 
-        var kLabelNote = new Label("Note: ");
-        grid.add(kLabelNote, 1, 3);
-        var kNote = new TextField();
-        grid.add(kNote, 2, 3);
+        var kLabelNote1 = new Label("Note 1: ");
+        grid.add(kLabelNote1, 1, 3);
+        var kNote1 = new TextField();
+        grid.add(kNote1, 2, 3);
+
+        var kLabelNote2 = new Label("Note 2: ");
+        grid.add(kLabelNote2, 1, 4);
+        var kNote2 = new TextField();
+        grid.add(kNote2, 2, 4);
 
 
+        var label2 = new Label("Bachelorarbeit: ");
+        grid.add(label2, 1, 5);
 
-
+        var bLabelEcts = new Label("ECTS: ");
+        grid.add(bLabelEcts, 1, 6);
+        var bEcts = new TextField();
+        grid.add(bEcts, 2, 6);
+        var bLabelNote1 = new Label("Note 1: ");
+        grid.add(bLabelNote1, 1, 7);
+        var bNote1 = new TextField();
+        grid.add(bNote1, 2, 7);
+        var bLabelNote2 = new Label("Note 2: ");
+        grid.add(bLabelNote2, 1, 8);
+        var bNote2 = new TextField();
+        grid.add(bNote2, 2, 8);
 
 
 
