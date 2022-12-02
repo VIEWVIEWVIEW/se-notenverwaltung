@@ -2,15 +2,13 @@ package de.fhswf.notenverwaltungws2223;
 
 import javafx.application.Application;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.value.ObservableDoubleValue;
-import javafx.beans.value.ObservableValue;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -24,6 +22,9 @@ public class Main extends Application {
     private Modul selectedItem;
 
     private SimpleDoubleProperty gewichteterModulNotendurchschnitt = new SimpleDoubleProperty();
+    private SimpleIntegerProperty ectsPunkte = new SimpleIntegerProperty();
+
+    static private Abschluss abschluss = new Abschluss();
 
     // Berechne den neuen gewichteten durchschnitt (ECTS * letzte Note) / ECTS aller Module
     private void berechneNeuenSchnitt() {
@@ -39,8 +40,9 @@ public class Main extends Application {
         double neuerSchnitt = summe / ectsSumme;
         System.out.println(summe + " / " + ectsSumme + "=" + neuerSchnitt);
         gewichteterModulNotendurchschnitt.set(summe / ectsSumme);
+        ectsPunkte.set((int) ectsSumme);
     }
-    public void loadState() {
+    public void loadStateModule() {
         try {
             FileInputStream fos = new FileInputStream("module");
             ObjectInputStream oos = new ObjectInputStream(fos);
@@ -61,7 +63,39 @@ public class Main extends Application {
         }
     }
 
-    public void saveState() {
+    public void loadStateAbschluss() {
+        try {
+            FileInputStream fos = new FileInputStream("abschluss");
+            ObjectInputStream oos = new ObjectInputStream(fos);
+            // https://stackoverflow.com/a/34795127/5692336
+            Abschluss tmp = (Abschluss) oos.readObject();
+            abschluss = tmp;
+            oos.close();
+            berechneNeuenSchnitt();
+        } catch (FileNotFoundException | ClassNotFoundException e) {
+            // Looks like we don't have a "abschluss" file yet, which most likely means that this is the first time the app is run
+            System.out.println("Create new Abschluss");
+            abschluss = new Abschluss();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public void saveStateAbschluss() {
+        try {
+            FileOutputStream fos = new FileOutputStream("abschluss");
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(abschluss);
+            oos.close();
+        }  catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void saveStateModule() {
         // Serialize our current state
         try {
             FileOutputStream fos = new FileOutputStream("module");
@@ -293,26 +327,33 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         this.gewichteterModulNotendurchschnitt.set(0);
-        loadState();
+        loadStateModule();
+        loadStateAbschluss();
 
         // save state on close
         stage.setOnCloseRequest(event -> {
-            saveState();
+            saveStateModule();
+            saveStateAbschluss();
         });
 
         // toolbar
-        var anzahlAllerEcts = new Label("Modulschnitt: ");
-
-
+        var modulSchnittLabel = new Label("Modulschnitt: ");
 
         var modulSchnitt = new Label();
         modulSchnitt.textProperty().bind(gewichteterModulNotendurchschnitt.asString("%.2f"));
 
+        var anzahlAllerEctsLabel = new Label("ECTS: ");
+        var anzahlAllerEcts = new Label();
+        anzahlAllerEcts.textProperty().bind(ectsPunkte.asString());
+        var labelVbox = new VBox(new HBox(modulSchnittLabel, modulSchnitt), new HBox(anzahlAllerEctsLabel, anzahlAllerEcts));
+
+
         var nurOffeneFächerAnzeigen = new CheckBox("Nur offene Fächer anzeigen");
         var neuesWahlpflichtmodulHinzufügen = new Button("Neues Wahlpflichtmodul hinzufügen");
         var neuesPflichtmodulHinzufügen = new Button("Neues Pflichtmodul hinzufügen");
+        var öffneAbschlussfenster = new Button("Abschlussfenster öffnen");
         var editModul = new Button("Modul bearbeiten");
-        var toolbar = new ToolBar(anzahlAllerEcts, modulSchnitt, nurOffeneFächerAnzeigen, neuesWahlpflichtmodulHinzufügen, neuesPflichtmodulHinzufügen, editModul);
+        var toolbar = new ToolBar(labelVbox, nurOffeneFächerAnzeigen, neuesWahlpflichtmodulHinzufügen, neuesPflichtmodulHinzufügen, editModul, öffneAbschlussfenster);
 
         // add new wahlpflichtmodul
         neuesWahlpflichtmodulHinzufügen.setOnMouseClicked(event -> {
@@ -324,6 +365,11 @@ public class Main extends Application {
         neuesPflichtmodulHinzufügen.setOnMouseClicked(event -> {
             neuesPflichtmodulHinzufuegen();
             berechneNeuenSchnitt();
+        });
+
+        // öffne Abschlussfenster
+        öffneAbschlussfenster.setOnMouseClicked(event -> {
+            abschlussFenster();
         });
 
         // Filter list view based on checkbox
@@ -370,7 +416,7 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.show();
 
-        abschlussFenster();
+
     }
 
     public static void abschlussFenster() {
@@ -417,6 +463,67 @@ public class Main extends Application {
         grid.add(bNote2, 2, 8);
 
 
+        // set abschluss ects texts
+        kEcts.setText(abschluss.ectsKolloquium.toString());
+        bEcts.setText(abschluss.ectsBachelor.toString());
+
+        // set abschluss note texts
+        for (int i = 0; i < abschluss.notenKolloquium.size(); i++) {
+            if (i == 0) {
+                kNote1.setText(abschluss.notenKolloquium.get(i).toString());
+            } else if (i == 1) {
+                kNote2.setText(abschluss.notenKolloquium.get(i).toString());
+            }
+        }
+
+        for (int i = 0; i < abschluss.noteBachelor.size(); i++) {
+            if (i == 0) {
+                bNote1.setText(abschluss.noteBachelor.get(i).toString());
+            } else if (i == 1) {
+                bNote2.setText(abschluss.noteBachelor.get(i).toString());
+            }
+        }
+
+        dialog.setOnCloseRequest(event -> {
+
+            if (dialog.getResult() == speichern) {
+                try {
+                    // save the new values
+                    abschluss.ectsKolloquium = Integer.parseInt(kEcts.getText());
+                    abschluss.ectsBachelor = Integer.parseInt(bEcts.getText());
+
+
+                    /**
+                    for (int i = 0; i < 2; i++) {
+                        String neueNote = ((TextField) grid.getChildren().get(i * 2 + 7)).getText();
+                        if (selectedItem.noten.size() > i) {
+                            Note note = selectedItem.noten.get(i);
+                            note.setErgebnis(Float.parseFloat(neueNote));
+                        } else if (!neueNote.isEmpty()){
+                            selectedItem.noteHinzufuegen(new Note(
+                                    Float.parseFloat(neueNote)
+                            ));
+                        }
+                    }*/
+
+/**
+                    if (abschluss.notenKolloquium.size() > 0) {
+                        Note note = abschluss.notenKolloquium.get(0);
+                        note.setErgebnis(Float.parseFloat(kNote1.getText()));
+                    } else if (!kNote1.getText().isEmpty()) {
+                        abschluss.noteKolloquiumHinzufuegen(new Note(
+                                Float.parseFloat(kNote1.getText())
+                        ));
+                    }
+**/
+
+
+
+                } catch (IllegalArgumentException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+        });
 
 
 

@@ -1,27 +1,31 @@
 package de.fhswf.notenverwaltungws2223;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class Abschluss {
+public class Abschluss implements Serializable {
 
-	private List<Note> noteBachelor;
-	private List<Note> notenKolloquium;
-	public int ectsKolloquium = 0;
-	public int ectsBachelor = 0;
+	public List<Note> noteBachelor;
+	public List<Note> notenKolloquium;
+	public Integer ectsKolloquium = 0;
+	public Integer ectsBachelor = 0;
 
-	private int maximalAnzahlNotenBachelor = 2;
-	private int maximalAnzahlNotenKolloquium = 2;
+	private Integer maximalAnzahlNotenBachelor = 2;
+	private Integer maximalAnzahlNotenKolloquium = 2;
 
-	Abschluss(int ectsKolloquium, int ectsBachelor) {
-		ectsBachelor = ectsBachelor;
-		ectsKolloquium = ectsKolloquium;
+	Abschluss() {
+		//ectsBachelor = ectsBachelor;
+		//ectsKolloquium = ectsKolloquium;
 		noteBachelor = new ArrayList<Note>();
 		notenKolloquium = new ArrayList<Note>();
 	}
 
 	public float getNotendurchschnitt() {
 		// TODO - implement Abschluss.getNotendurchschnitt
-		throw new UnsupportedOperationException();
+		Note bachelorNote = noteBachelor.get(noteBachelor.size() - 1);
+		Note kolloquiumNote = notenKolloquium.get(notenKolloquium.size() - 1);
+		float notendurchschnitt = (bachelorNote.getErgebnis() * ectsBachelor) + (kolloquiumNote.getErgebnis() * ectsKolloquium) / (ectsBachelor + ectsKolloquium);
+		return notendurchschnitt;
 	}
 
 	/**
