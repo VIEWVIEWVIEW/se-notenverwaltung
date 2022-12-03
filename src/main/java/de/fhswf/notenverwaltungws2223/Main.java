@@ -2,6 +2,7 @@ package de.fhswf.notenverwaltungws2223;
 
 import javafx.application.Application;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -24,7 +25,11 @@ public class Main extends Application {
     private SimpleDoubleProperty gewichteterModulNotendurchschnitt = new SimpleDoubleProperty();
     private SimpleIntegerProperty ectsPunkte = new SimpleIntegerProperty();
 
-    static private Abschluss abschluss = new Abschluss();
+    private Abschluss abschluss = new Abschluss();
+
+    private SimpleDoubleProperty gewichteterAbschlussNotendurchschnitt = new SimpleDoubleProperty();
+    private SimpleIntegerProperty ectsPunkteAbschluss = new SimpleIntegerProperty();
+
 
     // Berechne den neuen gewichteten durchschnitt (ECTS * letzte Note) / ECTS aller Module
     private void berechneNeuenSchnitt() {
@@ -38,6 +43,26 @@ public class Main extends Application {
             }
         }
         double neuerSchnitt = summe / ectsSumme;
+
+        double abschlussSchnitt = 0;
+        double abschlussEcts = 0;
+        for (Note note : abschluss.notenKolloquium) {
+            if (note.getErgebnis() <= 4.0F) {
+                abschlussSchnitt += note.getErgebnis() * abschluss.ectsKolloquium;
+                abschlussEcts += abschluss.ectsKolloquium;
+            }
+        }
+
+        for (Note note : abschluss.noteBachelor) {
+            if (note.getErgebnis() <= 4.0F) {
+                abschlussSchnitt += note.getErgebnis() * abschluss.ectsBachelor;
+                abschlussEcts += abschluss.ectsBachelor;
+            }
+        }
+        gewichteterAbschlussNotendurchschnitt.set(abschlussSchnitt / abschlussEcts);
+        ectsPunkteAbschluss.set((int) abschlussEcts);
+
+
         System.out.println(summe + " / " + ectsSumme + "=" + neuerSchnitt);
         gewichteterModulNotendurchschnitt.set(summe / ectsSumme);
         ectsPunkte.set((int) ectsSumme);
@@ -110,7 +135,7 @@ public class Main extends Application {
         }
     }
 
-    public void alert(Exception e) {
+    public static void alert(Exception e) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Fehler");
         alert.setHeaderText("Ungültige Eingabe");
@@ -342,10 +367,25 @@ public class Main extends Application {
         var modulSchnitt = new Label();
         modulSchnitt.textProperty().bind(gewichteterModulNotendurchschnitt.asString("%.2f"));
 
-        var anzahlAllerEctsLabel = new Label("ECTS: ");
+        var anzahlAllerEctsLabel = new Label("Modul ECTS: ");
         var anzahlAllerEcts = new Label();
         anzahlAllerEcts.textProperty().bind(ectsPunkte.asString());
-        var labelVbox = new VBox(new HBox(modulSchnittLabel, modulSchnitt), new HBox(anzahlAllerEctsLabel, anzahlAllerEcts));
+
+        var abschlussLabel = new Label("Abschluss: ");
+        var abschlussNote = new Label();
+        abschlussNote.textProperty().bind(gewichteterAbschlussNotendurchschnitt.asString("%.2f"));
+
+
+        var abschlussEctsLabel = new Label("Abschluss ECTS: ");
+        var abschlussEcts = new Label();
+        abschlussEcts.textProperty().bind(ectsPunkteAbschluss.asString());
+
+        var labelVbox = new VBox(
+                new HBox(modulSchnittLabel, modulSchnitt),
+                new HBox(anzahlAllerEctsLabel, anzahlAllerEcts),
+                new HBox(abschlussLabel, abschlussNote),
+                new HBox(abschlussEctsLabel, abschlussEcts)
+        );
 
 
         var nurOffeneFächerAnzeigen = new CheckBox("Nur offene Fächer anzeigen");
@@ -353,7 +393,7 @@ public class Main extends Application {
         var neuesPflichtmodulHinzufügen = new Button("Neues Pflichtmodul hinzufügen");
         var öffneAbschlussfenster = new Button("Abschlussfenster öffnen");
         var editModul = new Button("Modul bearbeiten");
-        var toolbar = new ToolBar(labelVbox, nurOffeneFächerAnzeigen, neuesWahlpflichtmodulHinzufügen, neuesPflichtmodulHinzufügen, editModul, öffneAbschlussfenster);
+        var toolbar = new ToolBar(labelVbox, new Separator(), nurOffeneFächerAnzeigen, neuesWahlpflichtmodulHinzufügen, neuesPflichtmodulHinzufügen, editModul, öffneAbschlussfenster);
 
         // add new wahlpflichtmodul
         neuesWahlpflichtmodulHinzufügen.setOnMouseClicked(event -> {
@@ -419,7 +459,7 @@ public class Main extends Application {
 
     }
 
-    public static void abschlussFenster() {
+    public void abschlussFenster() {
         var dialog = new Dialog();
 
         dialog.setTitle("Abschlussfenster");
@@ -470,17 +510,17 @@ public class Main extends Application {
         // set abschluss note texts
         for (int i = 0; i < abschluss.notenKolloquium.size(); i++) {
             if (i == 0) {
-                kNote1.setText(abschluss.notenKolloquium.get(i).toString());
+                kNote1.setText(String.valueOf(abschluss.notenKolloquium.get(i).getErgebnis()));
             } else if (i == 1) {
-                kNote2.setText(abschluss.notenKolloquium.get(i).toString());
+                kNote2.setText(String.valueOf(abschluss.notenKolloquium.get(i).getErgebnis()));
             }
         }
 
         for (int i = 0; i < abschluss.noteBachelor.size(); i++) {
             if (i == 0) {
-                bNote1.setText(abschluss.noteBachelor.get(i).toString());
+                bNote1.setText(String.valueOf(abschluss.noteBachelor.get(i).getErgebnis()));
             } else if (i == 1) {
-                bNote2.setText(abschluss.noteBachelor.get(i).toString());
+                bNote2.setText(String.valueOf(abschluss.noteBachelor.get(i).getErgebnis()));
             }
         }
 
@@ -493,34 +533,66 @@ public class Main extends Application {
                     abschluss.ectsBachelor = Integer.parseInt(bEcts.getText());
 
 
-                    /**
-                    for (int i = 0; i < 2; i++) {
-                        String neueNote = ((TextField) grid.getChildren().get(i * 2 + 7)).getText();
-                        if (selectedItem.noten.size() > i) {
-                            Note note = selectedItem.noten.get(i);
-                            note.setErgebnis(Float.parseFloat(neueNote));
-                        } else if (!neueNote.isEmpty()){
-                            selectedItem.noteHinzufuegen(new Note(
-                                    Float.parseFloat(neueNote)
-                            ));
+                    // set abschluss.notenKolloquium
+                    if (kNote1.getText().length() > 0) {
+                        if (abschluss.notenKolloquium.size() > 0) {
+                            Note note = abschluss.notenKolloquium.get(0);
+                            note.setErgebnis(Float.parseFloat(kNote1.getText()));
+                            abschluss.notenKolloquium.set(0, note);
+                        } else {
+                            abschluss.noteKolloquiumHinzufuegen(new Note(Float.parseFloat(kNote1.getText())));
                         }
-                    }*/
-
-/**
-                    if (abschluss.notenKolloquium.size() > 0) {
-                        Note note = abschluss.notenKolloquium.get(0);
-                        note.setErgebnis(Float.parseFloat(kNote1.getText()));
-                    } else if (!kNote1.getText().isEmpty()) {
-                        abschluss.noteKolloquiumHinzufuegen(new Note(
-                                Float.parseFloat(kNote1.getText())
-                        ));
                     }
-**/
+
+                    if (kNote2.getText().length() > 0) {
+                        if (abschluss.notenKolloquium.size() > 1) {
+
+                            abschluss.letzteKolloquiumnoteEntfernen();
+                            abschluss.noteKolloquiumHinzufuegen(new Note(Float.parseFloat(kNote2.getText())));
+                        } else {
+                            abschluss.noteKolloquiumHinzufuegen(new Note(Float.parseFloat(kNote2.getText())));
+                        }
+                    }
+
+
+                    // set abschluss.noteBachelor
+                    if (bNote1.getText().length() > 0) {
+                        if (abschluss.noteBachelor.size() > 0) {
+                            Note note = abschluss.noteBachelor.get(0);
+                            note.setErgebnis(Float.parseFloat(bNote1.getText()));
+                            abschluss.noteBachelor.set(0, note);
+                        } else {
+                            abschluss.noteBachelorHinzufuegen(new Note(Float.parseFloat(bNote1.getText())));
+                        }
+                    }
+
+                    if (bNote2.getText().length() > 0) {
+                        if (abschluss.noteBachelor.size() > 1) {
+                            abschluss.letzteBachelornoteEntfernen();
+                            abschluss.noteBachelorHinzufuegen(new Note(Float.parseFloat(bNote2.getText())));
+
+                        } else {
+                            abschluss.noteBachelorHinzufuegen(new Note(Float.parseFloat(bNote2.getText())));
+                        }
+                    }
+
+
+                    if (bNote2.getText() == "" && abschluss.noteBachelor.size() > 1) {
+                        abschluss.letzteBachelornoteEntfernen();
+                    }
+
+
+                    if (kNote2.getText() == "" && abschluss.notenKolloquium.size() > 1) {
+                        abschluss.letzteBachelornoteEntfernen();
+                    }
+
+                    berechneNeuenSchnitt();
 
 
 
-                } catch (IllegalArgumentException e) {
-                    System.out.println(e.getMessage());
+
+                } catch (Exception e) {
+                    alert(e);
                 }
             }
         });

@@ -20,6 +20,31 @@ public class Abschluss implements Serializable {
 		notenKolloquium = new ArrayList<Note>();
 	}
 
+	public boolean kolloquiumBestanden() {
+		if (notenKolloquium.size() == 0) {
+			return false;
+		}
+		for (Note note : notenKolloquium) {
+			if (note.getErgebnis() < 4.0F) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean bachelorBestanden() {
+		if (noteBachelor.size() == 0) {
+			return false;
+		}
+		for (Note note : noteBachelor) {
+			if (note.getErgebnis() < 4.0F) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
 	public float getNotendurchschnitt() {
 		// TODO - implement Abschluss.getNotendurchschnitt
 		Note bachelorNote = noteBachelor.get(noteBachelor.size() - 1);
@@ -34,7 +59,14 @@ public class Abschluss implements Serializable {
 	 */
 	public void noteBachelorHinzufuegen(Note note) {
 		if (noteBachelor.size() < maximalAnzahlNotenBachelor) {
-			noteBachelor.add(note);
+
+			// note kann nur eingefügt werden, wenn entweder keine noten eingefügt worden sind, oder die letzte note 5.0F ist
+			if (noteBachelor.size() == 0 || noteBachelor.get(noteBachelor.size() - 1).getErgebnis() == 5.0F) {
+				noteBachelor.add(note);
+			} else {
+				throw new IllegalArgumentException("Die letzte Note muss 5.0F sein");
+			}
+			// noteBachelor.add(note);
 		} else {
 			throw new IllegalArgumentException("Maximal 2 Noten pro Bachelor");
 		}
@@ -46,7 +78,14 @@ public class Abschluss implements Serializable {
 	 */
 	public void noteKolloquiumHinzufuegen(Note note) {
 		if (notenKolloquium.size() < maximalAnzahlNotenKolloquium) {
-			notenKolloquium.add(note);
+
+			// note kann nur eingefügt werden, wenn entweder keine noten eingefügt worden sind, oder die letzte note 5.0F ist
+			if (notenKolloquium.size() == 0 || notenKolloquium.get(notenKolloquium.size() - 1).getErgebnis() == 5.0F) {
+				notenKolloquium.add(note);
+			} else {
+				throw new IllegalArgumentException("Die letzte Note muss 5.0F sein");
+			}
+			// notenKolloquium.add(note);
 		} else {
 			throw new IllegalArgumentException("Maximal 2 Noten pro Kolloquium");
 		}
